@@ -15,7 +15,7 @@
 ## 冲突
 
  在我们自己研发 Crash 收集框架之前，最早肯定都会接入网易云捕、腾讯 Bugly、Fabric 等第三方日志框架来进行崩溃的收集和分析。如果多个 Crash 收集框架存在时，往往会存在冲突。
-不管是对于 Signal 捕获还是 NSException 捕获都会存在 handler 覆盖的问题，正确的做法应该是先判断是否有前者已经注册了 handler，如果有则应该把这个 handler 保存下来，在自己处理完自己的 handler 之后，再把这个 handler 抛出去，供前面的注册者处理。这里给出相应的 Demo，Demo 由[@zerygao](https://link.juejin.cn/?target=http%3A%2F%2Fwww.jianshu.com%2Fu%2F42a8a0e6abaf)提供。
+不管是对于 Signal 捕获还是 NSException 捕获都会存在 handler 覆盖的问题，正确的做法应该是先判断是否有前者已经注册了 handler，如果有则应该把这个 handler 保存下来，在自己处理完自己的 handler 之后，再把这个 handler 抛出去，供前面的注册者处理。这里给出相应的 Demo，Demo 由[@zerygao](https://github.com/facebookarchive/atosl)提供。
 
 ```c
 typedef void (*SignalHandler)(int signo, siginfo_t *info, void *context);
@@ -77,7 +77,7 @@ static void LDAPMUncaughtExceptionHandler(NSException *exception) {
 
 ## 堆栈收集
 
-你可以直接用系统的方法获取当前线程堆栈，也可以使用 PLCrashRepoter 获取所有线程堆栈，也可以参考 [BSBacktraceLogger](https://link.juejin.cn/?target=https%3A%2F%2Fgithub.com%2Fbestswifter%2FBSBacktraceLogger) 自己写一套轻量级的堆栈采集框架。
+你可以直接用系统的方法获取当前线程堆栈，也可以使用 PLCrashRepoter 获取所有线程堆栈，也可以参考 [BSBacktraceLogger](https://github.com/bestswifter/BSBacktraceLogger) 自己写一套轻量级的堆栈采集框架。
 
 
 ## 堆栈符号解析
@@ -86,7 +86,7 @@ static void LDAPMUncaughtExceptionHandler(NSException *exception) {
 
 - symbolicatecrash
 - mac 下的 atos 工具
-- linux 下的 atos 的替代品 [atosl](https://link.juejin.cn/?target=https%3A%2F%2Fgithub.com%2Ffacebookarchive%2Fatosl)
+- linux 下的 atos 的替代品 [atosl](https://github.com/facebookarchive/atosl)
 - 通过 dSYM 文件提取地址和符号的对应关系，进行符号还原
 
 以上方案都有对应的应用场景，对于线上的 Crash 堆栈符号还原，主要采用的还是后三种方案。atos 和 atosl 的使用方法很类似，以下是 atos 的一个示例。
@@ -98,7 +98,7 @@ atos -o MonitorExample 0x0000000100062ac4  ARM-64 -l 0x100058000
 -[GYRootViewController tableView:cellForRowAtIndexPath:] (in GYMonitorExample) (GYRootViewController.m:41)
 ```
 但是 atos 是Mac上一个工具，需要使用 Mac 或者黑苹果来进行解析工作，如果由后台来做解析工作，往往需要一套基于 Linux 的解析方案，这个时候可以选择 atosl，但是这个库已经有多年没有更新了，同时基于我司的尝试， atosl 好像不太支持 arm64 架构，所以我们放弃了该方案。
-最终使用了第四个方案，提取 dSYM 的符号表，可以自己研发工具，也可以直接使用 bugly 和 [网易云捕提供的工具](https://link.juejin.cn/?target=http%3A%2F%2Fcrash.163.com%2F%23dumply%2Ffaq%2Fios%2Foc)，下面是提取出来的符号表。第一列是起始内存地址，第二列是结束地址，第三列是对应的函数名、文件名以及行号。
+最终使用了第四个方案，提取 dSYM 的符号表，可以自己研发工具，也可以直接使用 bugly 和 [网易云捕提供的工具](http://crash.163.com/#dumply/faq/ios/oc)，下面是提取出来的符号表。第一列是起始内存地址，第二列是结束地址，第三列是对应的函数名、文件名以及行号。
 
 ```
 a840    a854    -[GYRootViewController tableView:cellForRowAtIndexPath:] GYRootViewController.m:41
@@ -164,10 +164,10 @@ NSString *executableUUID()
 上面只是提取到了我们应用中 dSYM 中的符号表，对于系统库还是无能为力的，比如 UIKit 就没有办法将其地址符号化，想要将动态库符号化，需要先获取系统库的符号文件。提取系统符号文件可以从 iOS 固件中获取，也可以从 Github 上开源项目中找到对应系统的符号文件。
 刚才只是讲了一个思路，具体的细节可以参考下面的资料：
 
-* [iOS异常捕获 ](https://link.juejin.cn/?target=http%3A%2F%2Fwww.iosxxx.com%2Fblog%2F2015-08-29-iosyi-chang-bu-huo.html)
-* [iOS dSYM文件结构剖析](https://link.juejin.cn/?target=http%3A%2F%2Fwww.csdn.net%2Farticle%2F2015-08-04%2F2825369)
-* [聊聊从iOS固件提取系统库符号](https://link.juejin.cn/?target=http%3A%2F%2Fblog.csdn.net%2Fcrash163%2Farticle%2Fdetails%2F52634606)
-* [iOS Crash分析必备：符号化系统库方法](https://link.juejin.cn/?target=https%3A%2F%2Fzuikyo.github.io%2F2016%2F12%2F18%2FiOS%2520Crash%25E6%2597%25A5%25E5%25BF%2597%25E5%2588%2586%25E6%259E%2590%25E5%25BF%2585%25E5%25A4%2587%25EF%25BC%259A%25E7%25AC%25A6%25E5%258F%25B7%25E5%258C%2596%25E7%25B3%25BB%25E7%25BB%259F%25E5%25BA%2593%25E6%2596%25B9%25E6%25B3%2595%2F)
+* [iOS异常捕获 ](http://www.iosxxx.com/blog/2015-08-29-iosyi-chang-bu-huo.html)
+* [iOS dSYM文件结构剖析](http://www.csdn.net/article/2015-08-04/2825369)
+* [聊聊从iOS固件提取系统库符号](http://blog.csdn.net/crash163/article/details/52634606)
+* [iOS Crash分析必备：符号化系统库方法](https://zuikyo.github.io/2016/12/18/iOS%20Crash%E6%97%A5%E5%BF%97%E5%88%86%E6%9E%90%E5%BF%85%E5%A4%87%EF%BC%9A%E7%AC%A6%E5%8F%B7%E5%8C%96%E7%B3%BB%E7%BB%9F%E5%BA%93%E6%96%B9%E6%B3%95/)
 
 
 

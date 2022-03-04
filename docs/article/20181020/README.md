@@ -9,7 +9,7 @@
 ### 1.1 使用场景
 默认情况下，由于分类底层结构的限制，不能直接给 Category 添加成员变量，但是可以通过关联对象间接实现 Category 有成员变量的效果。
 
-[传送门：OC - Category 和 Extension](https://link.juejin.cn/?target=https%3A%2F%2Fwww.jianshu.com%2Fp%2F1eca0353ceab)
+[传送门：OC - Category 和 Extension](https://www.jianshu.com/p/1eca0353ceab)
 
 ### 1.2 使用方法
 ```c
